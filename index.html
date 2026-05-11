@@ -236,6 +236,13 @@ body.font-large .camera-preview { height: calc(300px * var(--scale-factor)) !imp
   50% { transform: scale(1.15); filter: brightness(1.3); }
 }
 .streak-flame { animation: flamePulse 1.5s ease-in-out infinite; }
+
+/* AR overlay styles */
+@keyframes arrPulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.12)}}
+@keyframes pulseRing{0%,100%{box-shadow:0 0 0 0 rgba(14,165,233,.4)}50%{box-shadow:0 0 0 12px rgba(14,165,233,0)}}
+.ar-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);display:inline-block;transition:all .3s}
+.ar-dot.active{background:#0EA5E9;box-shadow:0 0 8px rgba(14,165,233,.5)}
+.ar-dot.done{background:#10B981}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
@@ -346,6 +353,24 @@ body.font-large .camera-preview { height: calc(300px * var(--scale-factor)) !imp
 <!-- 页面11: 乘车教学（按钮为“开始导航”，点击仅跳转相机） -->
 <div class="page" id="page-tutorial"><div class="px-5 pt-4 pb-2"><div class="flex items-center gap-3 mb-4"><button class="w-10 h-10 rounded-full glass-btn flex items-center justify-center" onclick="navigateBack()"><i class="fas fa-arrow-left text-white"></i></button><h1 class="text-white font-semibold" id="tutorial-title">乘车教学</h1></div></div><div class="px-5"><div class="glass-card p-4 mb-4"><p class="text-white/80 text-sm text-center" id="tutorial-desc">学习地铁乘车全流程，点击“开始导航”体验AR相机</p></div><div class="space-y-3" id="tutorial-tasks-container"></div></div></div>
 
+<!-- 页面11b: 详细教学 -->
+<div class="page" id="page-tutorial-detail">
+  <div class="px-5 pt-4 pb-2">
+    <div class="flex items-center gap-3 mb-4">
+      <button class="w-10 h-10 rounded-full glass-btn flex items-center justify-center" onclick="navigateBack()"><i class="fas fa-arrow-left text-white"></i></button>
+      <h1 class="text-white font-semibold" id="tut-detail-title">详细教学</h1>
+    </div>
+  </div>
+  <div class="px-5" style="padding-bottom:24px">
+    <div class="glass-card p-4 mb-4" id="tut-detail-overview"></div>
+    <div class="space-y-3" id="tut-detail-steps"></div>
+    <div class="mt-4" style="display:flex;gap:8px">
+      <button class="flex-1 py-3 rounded-xl glass-btn text-white text-sm" onclick="navigateBack()"><i class="fas fa-arrow-left mr-1"></i><span id="tut-back-btn">返回教学</span></button>
+      <button class="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold" onclick="startTutorialNavigation()"><i class="fas fa-camera mr-1"></i><span id="tut-start-ar">开始AR导航</span></button>
+    </div>
+  </div>
+</div>
+
 <!-- 页面12: AR导航 -->
 <div class="page" id="page-ar-nav"><div class="px-5 pt-4 pb-2"><div class="flex items-center gap-3 mb-4"><button class="w-10 h-10 rounded-full glass-btn flex items-center justify-center" onclick="navigateBack()"><i class="fas fa-arrow-left text-white"></i></button><h1 class="text-white font-semibold" id="ar-title">AR导航</h1></div></div><div class="px-5"><div class="glass-card p-4 mb-4"><div class="flex gap-3 mb-3"><div class="flex-1"><label class="text-white/70 text-xs mb-1 block" id="ar-line-label">选择线路</label><select id="ar-line-select" class="w-full px-3 py-2 rounded-xl text-sm bg-dark/50" onchange="onARLineChange()"><option value="line19">19号线</option><option value="line18">18号线</option></select></div></div><div class="relative h-64 bg-gradient-to-b from-cyan-900/50 to-dark rounded-xl overflow-hidden mb-4"><div class="absolute inset-0 flex items-center justify-center"><div class="text-center"><div class="w-20 h-20 mx-auto mb-3 rounded-full border-2 border-primary pulse-ring flex items-center justify-center"><i class="fas fa-location-arrow text-primary text-2xl"></i></div><p class="text-white font-medium" id="ar-next-station">--</p><p class="text-primary text-sm" id="ar-distance-desc">即将到达</p></div></div><div class="absolute bottom-4 left-4 right-4 glass-card p-3"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center"><i class="fas fa-subway text-primary"></i></div><div class="flex-1"><p class="text-white text-sm font-medium" id="ar-route-summary">--</p><p class="text-white/70 text-xs" id="ar-time-summary">0分钟</p></div><div class="text-right"><p class="text-primary font-bold" id="ar-remain-stations">0站</p></div></div></div></div><div class="flex gap-2"><button class="flex-1 py-3 rounded-xl glass-btn text-white text-sm" id="ar-switch-mode" onclick="toggleARMode()">切换模式</button><button class="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-sm" id="ar-use-nav" onclick="useARNavigation()">使用AR导航</button></div></div><div class="glass-card p-4 mb-4"><p class="text-white font-medium mb-3" id="ar-steps-title">导航步骤</p><div id="ar-steps-list" class="space-y-3"></div></div></div></div>
 
@@ -354,8 +379,78 @@ body.font-large .camera-preview { height: calc(300px * var(--scale-factor)) !imp
 <div class="glass-card p-4 mb-4"><div class="flex items-center gap-3 mb-4"><i class="fas fa-language text-primary text-xl"></i><p class="text-white font-medium" id="language-label">语言 / Language</p></div><div class="space-y-3"><div class="flex items-center justify-between"><div><p class="text-white text-sm" id="language-select-label">切换语言</p><p class="text-white/70 text-xs" id="language-desc">选择界面语言</p></div><select id="language-switch" class="px-3 py-2 rounded-xl bg-dark/50 text-white border border-white/20" onchange="switchLanguage(this.value)"><option value="zh">简体中文</option><option value="en">English</option></select></div></div></div>
 <div class="glass-card p-4 mb-4"><button class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium" id="book-service" onclick="bookAssistance()">预约无障碍服务</button></div></div></div>
 
-<!-- 页面14: AR拍照 -->
-<div class="page" id="page-camera"><div class="px-5 pt-4 pb-2"><div class="flex items-center gap-3 mb-4"><button class="w-10 h-10 rounded-full glass-btn flex items-center justify-center" onclick="stopCamera(); navigateBack();"><i class="fas fa-arrow-left text-white"></i></button><h1 class="text-white font-semibold" id="camera-title">AR拍照</h1></div></div><div class="px-5"><div class="glass-card p-4 mb-4"><div class="camera-preview rounded-xl mb-4 relative overflow-hidden" id="camera-container"><video id="camera-video" class="w-full h-full object-cover" autoplay playsinline></video><canvas id="photo-canvas" class="photo-canvas"></canvas><div id="camera-placeholder" class="absolute inset-0 flex items-center justify-center bg-dark/80"><div class="text-center"><i class="fas fa-camera text-white/50 text-4xl mb-2"></i><p class="text-white/70 text-sm" id="camera-placeholder-text">点击下方按钮开启摄像头</p></div></div></div><div class="flex items-center justify-center gap-4 mb-4"><button class="w-12 h-12 rounded-full glass-btn flex items-center justify-center" onclick="toggleAROverlay()"><i class="fas fa-layer-group text-white"></i></button><button class="w-16 h-16 rounded-full bg-white flex items-center justify-center" onclick="takePhoto()"><div class="w-14 h-14 rounded-full border-4 border-gray-800"></div></button><button class="w-12 h-12 rounded-full glass-btn flex items-center justify-center" onclick="switchCamera()"><i class="fas fa-sync-alt text-white"></i></button></div><div class="flex gap-2"><button class="flex-1 py-3 rounded-xl glass-btn text-white text-sm" id="start-camera-btn" onclick="startCamera()">开启摄像头</button><button class="flex-1 py-3 rounded-xl glass-btn text-white text-sm" id="stop-camera-btn" onclick="stopCamera()">关闭摄像头</button></div></div><div class="glass-card p-4"><p class="text-white font-medium mb-3" id="photo-gallery-title">已拍摄照片</p><div class="grid grid-cols-3 gap-2" id="photo-gallery"></div></div></div></div>
+<!-- 页面14: AR相机导航 -->
+<div class="page" id="page-camera">
+  <div class="px-5 pt-4 pb-2">
+    <div class="flex items-center gap-3 mb-4">
+      <button class="w-10 h-10 rounded-full glass-btn flex items-center justify-center" onclick="stopCamera(); navigateBack();"><i class="fas fa-arrow-left text-white"></i></button>
+      <h1 class="text-white font-semibold" id="camera-title">AR导航</h1>
+      <div class="flex-1"></div>
+      <span class="text-accent font-bold text-sm" id="ar-cam-pts">+0 积分</span>
+    </div>
+  </div>
+  <div class="px-5" style="padding-bottom:24px">
+    <div class="glass-card overflow-hidden mb-3" style="position:relative">
+      <!-- 相机画面 -->
+      <div class="camera-preview rounded-xl relative overflow-hidden" id="camera-container" style="height:380px">
+        <video id="camera-video" class="w-full h-full object-cover" autoplay playsinline></video>
+        <canvas id="photo-canvas" class="photo-canvas"></canvas>
+        <div id="camera-placeholder" class="absolute inset-0 flex items-center justify-center bg-dark/80">
+          <div class="text-center">
+            <div class="w-20 h-20 mx-auto mb-3 rounded-full border-2 border-primary flex items-center justify-center" style="animation:pulseRing 2s ease-in-out infinite">
+              <i class="fas fa-location-arrow text-primary text-2xl"></i>
+            </div>
+            <p class="text-white/70 text-sm" id="camera-placeholder-text">点击下方按钮开启AR导航</p>
+          </div>
+        </div>
+        <!-- AR叠加层 -->
+        <div id="ar-overlay" style="position:absolute;inset:0;pointer-events:none;display:none;flex-direction:column;align-items:center;justify-content:center">
+          <!-- 方向箭头 -->
+          <div id="ar-cam-arrow" style="font-size:80px;color:#0EA5E9;filter:drop-shadow(0 4px 16px rgba(14,165,233,.7));animation:arrPulse 1.5s ease-in-out infinite">
+            <i class="fas fa-arrow-up"></i>
+          </div>
+          <!-- 步骤提示卡片 -->
+          <div id="ar-cam-card" style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(14,165,233,.92);backdrop-filter:blur(12px);padding:14px 28px;border-radius:18px;text-align:center;color:#fff;font-weight:700;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+            <div style="font-size:11px;opacity:.75;margin-bottom:2px" id="ar-cam-stage">购票阶段</div>
+            <div id="ar-cam-hint" style="font-size:14px">请前往自动售票机</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- AR步骤进度 -->
+    <div class="glass-card p-3 mb-3">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;color:#94A3B8" id="ar-cam-prog">阶段 1/5</span>
+        <div style="display:flex;gap:4px" id="ar-step-dots">
+          <span class="ar-dot active"></span><span class="ar-dot"></span><span class="ar-dot"></span><span class="ar-dot"></span><span class="ar-dot"></span>
+        </div>
+      </div>
+      <div class="h-1.5 bg-dark rounded-full overflow-hidden">
+        <div id="ar-cam-bar" class="h-full rounded-full" style="width:20%;background:linear-gradient(90deg,#0EA5E9,#06B6D4);transition:width .4s"></div>
+      </div>
+    </div>
+    <!-- 控制按钮 -->
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold" id="ar-toggle-btn" onclick="toggleAROverlay()"><i class="fas fa-layer-group mr-1"></i><span id="ar-toggle-text">显示AR</span></button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="flex-1 py-3 rounded-xl glass-btn text-white text-sm" onclick="arCamPrev()"><i class="fas fa-chevron-left mr-1"></i><span id="ar-prev-btn">上一步</span></button>
+      <button class="flex-[1.5] py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold" onclick="arCamConfirm()"><i class="fas fa-check mr-1"></i><span id="ar-confirm-btn">确认完成</span></button>
+      <button class="flex-1 py-3 rounded-xl glass-btn text-white text-sm" onclick="arCamNext()"><span id="ar-next-btn">下一步</span><i class="fas fa-chevron-right ml-1"></i></button>
+    </div>
+    <!-- 其他操作 -->
+    <div style="display:flex;gap:8px">
+      <button class="flex-1 py-2.5 rounded-xl glass-btn text-white text-xs" onclick="startCamera()"><i class="fas fa-camera mr-1"></i><span id="ar-start-cam">开启摄像头</span></button>
+      <button class="flex-1 py-2.5 rounded-xl glass-btn text-white text-xs" onclick="stopCamera()"><i class="fas fa-stop mr-1"></i><span id="ar-stop-cam">关闭摄像头</span></button>
+      <button class="flex-1 py-2.5 rounded-xl glass-btn text-white text-xs" onclick="takePhoto()"><i class="fas fa-image mr-1"></i><span id="ar-take-photo">拍照</span></button>
+    </div>
+    <!-- 已拍摄照片 -->
+    <div class="glass-card p-4 mt-3">
+      <p class="text-white font-medium mb-3" id="photo-gallery-title">已拍摄照片</p>
+      <div class="grid grid-cols-3 gap-2" id="photo-gallery"></div>
+    </div>
+  </div>
+</div>
 
 <!-- 页面15: 出行记录 -->
 <div class="page" id="page-history"><div class="px-5 pt-4 pb-2"><div class="flex items-center gap-3 mb-4"><button class="w-10 h-10 rounded-full glass-btn flex items-center justify-center" onclick="navigateBack()"><i class="fas fa-arrow-left text-white"></i></button><h1 class="text-white font-semibold" id="history-title">出行记录</h1></div></div><div class="px-5"><div class="glass-card p-4 mb-4"><div class="grid grid-cols-3 gap-4 text-center"><div><p class="text-white font-bold text-xl" id="total-trips-num">0</p><p class="text-white/70 text-xs" id="total-trips-label">总出行次数</p></div><div><p class="text-white font-bold text-xl" id="total-carbon-num">0kg</p><p class="text-white/70 text-xs" id="total-carbon-label">累计减碳</p></div><div><p class="text-white font-bold text-xl" id="total-distance-num">0km</p><p class="text-white/70 text-xs" id="total-distance-label">总里程</p></div></div></div><div class="space-y-3" id="history-list"></div></div></div>
@@ -702,10 +797,19 @@ function refreshAllUI() {
   const achievedCount = achievementsData.filter(ach => ach.check(currentUserData)).length;
   document.getElementById('user-badges').textContent = achievedCount;
   // 个人中心
+  if (document.getElementById('welcome-msg')) document.getElementById('welcome-msg').innerHTML = `欢迎回来，${currentUserId || '探索者'}`;
+  if (document.getElementById('profile-name')) document.getElementById('profile-name').textContent = currentUserId || '用户';
+  if (document.getElementById('profile-id')) document.getElementById('profile-id').textContent = `ID: ${(currentUserId || '--').substring(0,4)}****`;
   if (document.getElementById('profile-level')) document.getElementById('profile-level').textContent = level;
   if (document.getElementById('stat-trips-value')) document.getElementById('stat-trips-value').textContent = currentUserData.trips;
   if (document.getElementById('stat-points-value')) document.getElementById('stat-points-value').textContent = currentUserData.points;
   if (document.getElementById('stat-badges-value')) document.getElementById('stat-badges-value').textContent = achievedCount;
+  const memberLevelSpan = document.getElementById('member-level');
+  if (memberLevelSpan) {
+    if (currentUserData.points >= 5000) memberLevelSpan.textContent = '钻石会员';
+    else if (currentUserData.points >= 2000) memberLevelSpan.textContent = '黄金会员';
+    else memberLevelSpan.textContent = '普通会员';
+  }
   if (document.getElementById('total-trips-num')) document.getElementById('total-trips-num').textContent = currentUserData.trips;
   if (document.getElementById('total-carbon-num')) document.getElementById('total-carbon-num').textContent = currentUserData.carbon.toFixed(1) + 'kg';
   const totalDist = (currentUserData.trips * 5.5).toFixed(0);
@@ -793,7 +897,7 @@ function renderTutorialPage() {
     { id: 'exitGate', name_zh: '出站', name_en: 'Exit Gate', desc_zh: '学习如何刷卡/扫码出站', desc_en: 'Learn to exit the station', icon: 'fa-sign-out-alt' }
   ];
   const isEn = currentLang === 'en';
-  container.innerHTML = tasks.map(task => {
+  container.innerHTML = tasks.map((task, idx) => {
     const name = isEn ? task.name_en : task.name_zh;
     const desc = isEn ? task.desc_en : task.desc_zh;
     return `
@@ -801,15 +905,19 @@ function renderTutorialPage() {
         <div class="flex items-center gap-3 mb-2">
           <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center"><i class="fas ${task.icon} text-primary text-lg"></i></div>
           <div class="flex-1"><p class="text-white font-medium">${name}</p><p class="text-white/70 text-xs">${desc}</p></div>
+          <div class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center"><span class="text-white/60 text-xs font-bold">${idx+1}</span></div>
         </div>
-        <button class="w-full mt-2 py-2 rounded-lg bg-primary text-white text-sm" onclick="startTutorialNavigation()">${isEn ? 'Start Navigation' : '开始导航'}</button>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="flex-1 py-2 rounded-lg glass-btn text-white text-xs" onclick="startTutorialDetail('${task.id}')"><i class="fas fa-book-open mr-1"></i>${isEn ? 'Tutorial' : '开始教学'}</button>
+          <button class="flex-1 py-2 rounded-lg bg-primary text-white text-xs" onclick="startTutorialNavigation()"><i class="fas fa-camera mr-1"></i>${isEn ? 'Start Nav' : '开始导航'}</button>
+        </div>
       </div>
     `;
   }).join('');
 }
 function startTutorialNavigation() {
   navigateTo('page-camera');
-  setTimeout(() => { startCamera(); }, 300);
+  setTimeout(() => { startCamera(); initARNavigation(); }, 300);
 }
 // 相机相关函数（保持原样）
 let currentCameraStream = null;
@@ -823,6 +931,7 @@ function startCamera() {
       video.srcObject = stream;
       video.style.display = 'block';
       if (placeholder) placeholder.style.display = 'none';
+      // AR叠加层保持当前状态，不自动显示
       showToast(currentLang === 'zh' ? '摄像头已开启' : 'Camera enabled');
     })
     .catch(() => showToast(currentLang === 'zh' ? '无法访问摄像头' : 'Camera access denied'));
@@ -831,8 +940,11 @@ function stopCamera() {
   if(currentCameraStream){ currentCameraStream.getTracks().forEach(t=>t.stop()); currentCameraStream=null; } 
   const video=document.getElementById('camera-video'), placeholder=document.getElementById('camera-placeholder'); 
   if(video) video.style.display='none'; 
-  if(placeholder) placeholder.style.display='flex'; 
-  showToast(currentLang === 'zh' ? '摄像头已关闭' : 'Camera disabled'); 
+  if(placeholder) placeholder.style.display='flex';
+  // 隐藏AR叠加层
+  const overlay = document.getElementById('ar-overlay');
+  if (overlay) overlay.style.display = 'none';
+  showToast(currentLang === 'zh' ? 'AR摄像头已关闭' : 'AR Camera disabled'); 
 }
 function takePhoto() { 
   const video=document.getElementById('camera-video'); 
@@ -848,7 +960,7 @@ function takePhoto() {
   showToast(currentLang === 'zh' ? '拍照成功' : 'Photo taken'); 
 }
 function switchCamera() { showToast(currentLang === 'zh' ? '切换摄像头暂未实现' : 'Switch camera not implemented'); }
-function useARNavigation() { if (!dailyTasks.arNav) completeTask('arNav',20); navigateTo('page-camera'); setTimeout(()=>startCamera(),200); }
+function useARNavigation() { if (!dailyTasks.arNav) completeTask('arNav',20); navigateTo('page-camera'); setTimeout(()=>{startCamera();initARNavigation();},200); }
 // 其他页面渲染函数（与之前基本相同，略）
 function renderAllDynamicContent() { 
   renderNearbyStation(); renderRecentTrips(); renderStationList(); renderDailyTasks(); renderHistoryList(); renderNotificationList(); renderGameTasks(); 
@@ -1043,6 +1155,7 @@ function navigateTo(pageId) {
     updatePointsDetailPage();
   }
   if(pageId==='page-tutorial') renderTutorialPage();
+  if(pageId==='page-tutorial-detail') {} // handled by startTutorialDetail
   updateBottomNavActive(pageId);
   const bottomNav = document.getElementById('bottom-nav');
   if (pageId === 'page-login') bottomNav.classList.add('hide');
@@ -1078,7 +1191,276 @@ setInterval(updateDateTime,1000); updateDateTime();
 function toggleAccessibility(s) { showToast(`${s} ${currentLang === 'zh' ? '已更新' : 'updated'}`); }
 function bookAssistance() { showToast(currentLang === 'zh' ? '预约成功' : 'Booking successful'); }
 function toggleARMode() { showToast(currentLang === 'zh' ? '模式切换' : 'Mode toggled'); }
-function toggleAROverlay() { showToast(currentLang === 'zh' ? 'AR滤镜切换' : 'Filter toggled'); }
+
+// ==================== AR相机导航系统 ====================
+const AR_STAGES = [
+  { id: 'ticket', icon: 'fa-ticket-alt', arrow: 'fa-arrow-up', hint_zh: '请前往自动售票机', hint_en: 'Go to ticket machine', stage_zh: '购票阶段', stage_en: 'Ticket', confirm_zh: '已到达售票机', confirm_en: 'At ticket machine' },
+  { id: 'entry', icon: 'fa-door-open', arrow: 'fa-arrow-right', hint_zh: '请通过安检后刷卡进闸', hint_en: 'Pass security & tap card', stage_zh: '进站阶段', stage_en: 'Entry', confirm_zh: '已通过闸机', confirm_en: 'Passed the gate' },
+  { id: 'ride', icon: 'fa-subway', arrow: 'fa-arrow-up', hint_zh: '请在站台等候列车', hint_en: 'Wait at platform', stage_zh: '乘车阶段', stage_en: 'Ride', confirm_zh: '已上车', confirm_en: 'Boarded train' },
+  { id: 'transfer', icon: 'fa-exchange-alt', arrow: 'fa-arrow-right', hint_zh: '请沿换乘通道前行', hint_en: 'Follow transfer corridor', stage_zh: '换乘阶段', stage_en: 'Transfer', confirm_zh: '已到达换乘通道', confirm_en: 'At transfer' },
+  { id: 'exit', icon: 'fa-sign-out-alt', arrow: 'fa-arrow-down', hint_zh: '请刷卡出闸', hint_en: 'Tap card to exit', stage_zh: '出站阶段', stage_en: 'Exit', confirm_zh: '已出站', confirm_en: 'Exited station' }
+];
+let arCamStep = 0;
+let arCamPtsEarned = 0;
+let arOverlayVisible = false;
+
+function updateARCamDisplay() {
+  const s = AR_STAGES[arCamStep];
+  const isEn = currentLang === 'en';
+  const arrowEl = document.getElementById('ar-cam-arrow');
+  if (arrowEl) arrowEl.innerHTML = `<i class="fas ${s.arrow}"></i>`;
+  const stageEl = document.getElementById('ar-cam-stage');
+  if (stageEl) stageEl.textContent = isEn ? s.stage_en : s.stage_zh;
+  const hintEl = document.getElementById('ar-cam-hint');
+  if (hintEl) hintEl.textContent = isEn ? s.hint_en : s.hint_zh;
+  const progEl = document.getElementById('ar-cam-prog');
+  if (progEl) progEl.textContent = `${isEn ? 'Stage' : '阶段'} ${arCamStep + 1}/5`;
+  const barEl = document.getElementById('ar-cam-bar');
+  if (barEl) barEl.style.width = `${(arCamStep + 1) * 20}%`;
+  const dots = document.querySelectorAll('#ar-step-dots .ar-dot');
+  dots.forEach((dot, i) => {
+    dot.className = 'ar-dot';
+    if (i < arCamStep) dot.classList.add('done');
+    if (i === arCamStep) dot.classList.add('active');
+  });
+  const ptsEl = document.getElementById('ar-cam-pts');
+  if (ptsEl) ptsEl.textContent = `+${arCamPtsEarned} ${isEn ? 'pts' : '积分'}`;
+}
+
+function toggleAROverlay() {
+  arOverlayVisible = !arOverlayVisible;
+  const overlay = document.getElementById('ar-overlay');
+  const btn = document.getElementById('ar-toggle-text');
+  if (overlay) overlay.style.display = arOverlayVisible ? 'flex' : 'none';
+  if (btn) btn.textContent = arOverlayVisible ? (currentLang === 'zh' ? '隐藏AR' : 'Hide AR') : (currentLang === 'zh' ? '显示AR' : 'Show AR');
+  const toggleBtn = document.getElementById('ar-toggle-btn');
+  if (toggleBtn) {
+    if (arOverlayVisible) {
+      toggleBtn.className = 'flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold';
+    } else {
+      toggleBtn.className = 'flex-1 py-3 rounded-xl glass-btn text-white text-sm';
+    }
+  }
+  if (arOverlayVisible) updateARCamDisplay();
+}
+
+function arCamConfirm() {
+  if (!currentUserData) return;
+  const s = AR_STAGES[arCamStep];
+  const isEn = currentLang === 'en';
+  // 完成当前关卡获得积分
+  arCamPtsEarned += 30;
+  currentUserData.points += 30;
+  showToast((isEn ? s.confirm_en : s.confirm_zh) + ' +30 pts');
+  // 完成AR导航每日任务（使用后端API）
+  if (!dailyTasks.arNav) {
+    completeMission(3, 20); // missionId 3 = arNav
+  }
+  if (arCamStep < 4) {
+    arCamStep++;
+    updateARCamDisplay();
+  } else {
+    showToast(currentLang === 'zh' ? '🎉 恭喜完成所有AR导航关卡！' : '🎉 All AR stages completed!');
+    setTimeout(() => {
+      stopCamera();
+      navigateBack();
+    }, 1800);
+  }
+}
+
+function arCamNext() {
+  if (arCamStep < 4) { arCamStep++; updateARCamDisplay(); }
+}
+
+function arCamPrev() {
+  if (arCamStep > 0) { arCamStep--; updateARCamDisplay(); }
+}
+
+function initARNavigation() {
+  arCamStep = 0;
+  arCamPtsEarned = 0;
+  arOverlayVisible = false;
+  const overlay = document.getElementById('ar-overlay');
+  if (overlay) overlay.style.display = 'none';
+  const btn = document.getElementById('ar-toggle-text');
+  if (btn) btn.textContent = currentLang === 'zh' ? '显示AR' : 'Show AR';
+  const toggleBtn = document.getElementById('ar-toggle-btn');
+  if (toggleBtn) toggleBtn.className = 'flex-1 py-3 rounded-xl glass-btn text-white text-sm';
+  updateARCamDisplay();
+}
+
+// ==================== 详细教学系统 ====================
+const TUTORIAL_DETAIL_DATA = {
+  buyTicket: {
+    icon: 'fa-ticket-alt', color: '#0EA5E9',
+    title_zh: '购票详细教学', title_en: 'Ticket Purchase Tutorial',
+    intro_zh: '购票是地铁出行的第一步。成都地铁支持多种购票方式，包括自动售票机、手机App扫码购票、天府通卡等。本教程将详细介绍最常用的两种方式。',
+    intro_en: 'Buying a ticket is the first step. Chengdu Metro supports multiple methods: vending machines, mobile app QR codes, Tianfu Tong cards, etc.',
+    steps: [
+      { title_zh: '第一步：找到自动售票机', title_en: 'Step 1: Find the Ticket Machine', icon: 'fa-search',
+        detail_zh: '进入地铁站后，在站厅层可以看到一排自动售票机（TVM）。售票机通常位于进站闸机附近，机身较大，有明显的"购票"标识。如果找不到，可以询问站内工作人员或查看站内指示牌。',
+        detail_en: 'After entering the station, look for a row of Ticket Vending Machines (TVM) near the entrance gates. They are large machines with clear "Ticket" labels.',
+        tips_zh: ['💡 购票机上方通常有线路图，可以先查看票价', '💡 高峰时段排队较长，建议使用手机App购票'],
+        tips_en: ['💡 Check the route map above the machine for fares', '💡 Use mobile app during peak hours to skip the line'] },
+      { title_zh: '第二步：选择目的地', title_en: 'Step 2: Select Destination', icon: 'fa-map-marker-alt',
+        detail_zh: '在售票机触摸屏上，点击"购票"按钮，然后在线路图上点击您的目的地站点。系统会自动显示票价。部分机器支持拼音首字母搜索站点名称。',
+        detail_en: 'On the touchscreen, tap "Buy Ticket", then tap your destination on the route map. The fare will be displayed automatically.',
+        tips_zh: ['💡 不确定站点名称可以看线路图上的标注', '💡 票价按距离计算，2元起步'],
+        tips_en: ['💡 Check the route map if unsure about station names', '💡 Fares start from ¥2 based on distance'] },
+      { title_zh: '第三步：支付', title_en: 'Step 3: Pay', icon: 'fa-credit-card',
+        detail_zh: '确认目的地和票价后，选择支付方式。自动售票机支持：① 硬币投入 ② 纸币插入 ③ 扫码支付（微信/支付宝）。扫码支付最方便，将手机二维码对准机器扫描口即可。',
+        detail_en: 'After confirming destination and fare, choose payment method: ① Coins ② Bills ③ QR code (WeChat/Alipay). QR payment is most convenient.',
+        tips_zh: ['💡 扫码支付时保持手机屏幕亮度调高', '💡 投入纸币前注意机器是否接受该面额'],
+        tips_en: ['💡 Increase screen brightness when scanning QR', '💡 Check accepted bill denominations before inserting'] },
+      { title_zh: '第四步：取票', title_en: 'Step 4: Collect Ticket', icon: 'fa-hand-paper',
+        detail_zh: '支付成功后，机器下方出票口会吐出一张圆形蓝色塑料票卡（单程票）。请立即取走，避免遗失。如果同时购买多张票，所有票会一起出票。',
+        detail_en: 'After payment, a round blue plastic token will be dispensed at the bottom. Collect it immediately.',
+        tips_zh: ['💡 单程票出站时需要投入闸机回收', '💡 请妥善保管，丢失需重新购买'],
+        tips_en: ['💡 Single-trip tokens must be inserted into exit gates', '💡 Keep it safe; lost tokens require repurchase'] }
+    ]
+  },
+  enterGate: {
+    icon: 'fa-door-open', color: '#10B981',
+    title_zh: '进闸详细教学', title_en: 'Gate Entry Tutorial',
+    intro_zh: '通过闸机进站是乘车的第二步。成都地铁闸机支持刷卡、扫码、刷脸等多种方式。',
+    intro_en: 'Passing through the entry gate is the second step. Gates support card tap, QR scan, face recognition, and more.',
+    steps: [
+      { title_zh: '第一步：选择闸机通道', title_en: 'Step 1: Choose a Gate Lane', icon: 'fa-columns',
+        detail_zh: '进站闸机通常有多条通道，选择一条排队人数较少的通道。注意：闸机上方绿灯亮起表示可用，红灯表示不可用或正在处理。',
+        detail_en: 'Choose a gate lane with fewer people. Green light above = available, red light = in use or unavailable.',
+        tips_zh: ['💡 带大件行李可走宽通道闸机', '💡 闸机两侧有常开通道，适合推婴儿车'],
+        tips_en: ['💡 Use wider lanes for large luggage', '💡 Side lanes are always open for strollers'] },
+      { title_zh: '第二步：刷卡/扫码进站', title_en: 'Step 2: Tap Card or Scan QR', icon: 'fa-id-card',
+        detail_zh: '将天府通卡或手机NFC贴近闸机感应区（通常在闸机顶部或侧面，有明显标识）。使用手机App扫码的，打开App乘车码页面，将二维码对准闸机扫码口。',
+        detail_en: 'Tap your Tianfu Tong card or phone NFC on the gate reader. For QR code, open the transit app and scan at the QR reader.',
+        tips_zh: ['💡 刷卡时不要移动太快，保持1-2秒', '💡 扫码时保持手机屏幕亮度调高'],
+        tips_en: ['💡 Hold card steady for 1-2 seconds', '💡 Increase screen brightness for QR scan'] },
+      { title_zh: '第三步：通过闸机', title_en: 'Step 3: Walk Through', icon: 'fa-walking',
+        detail_zh: '刷卡/扫码成功后，闸机会发出"滴"声，闸门打开。请快速通过，不要在闸机通道内停留。注意：闸门开启后有超时自动关闭，需在5秒内通过。',
+        detail_en: 'After successful tap/scan, the gate beeps and opens. Walk through quickly; gates auto-close after 5 seconds.',
+        tips_zh: ['💡 紧跟前面的人通过会触发防尾随报警', '💡 一人一票，不要携带他人一起通过'],
+        tips_en: ['💡 Tailgating triggers an alarm', '💡 One ticket per person'] }
+    ]
+  },
+  boardTrain: {
+    icon: 'fa-train', color: '#F59E0B',
+    title_zh: '乘车详细教学', title_en: 'Boarding Tutorial',
+    intro_zh: '通过闸机后，需要根据指示牌找到正确的站台，等候列车并上车。',
+    intro_en: 'After passing the gate, find the correct platform, wait for the train, and board.',
+    steps: [
+      { title_zh: '第一步：找到正确站台', title_en: 'Step 1: Find the Right Platform', icon: 'fa-sign',
+        detail_zh: '根据站内指示牌找到您要乘坐线路的站台。指示牌会标注线路名称和列车行驶方向。注意区分上行和下行方向，坐错方向会多花时间。',
+        detail_en: 'Follow signs to your line\'s platform. Signs show line name and direction. Make sure you\'re going the right direction.',
+        tips_zh: ['💡 站台上方有电子屏显示下次列车到站时间', '💡 如果不确定方向，看站台上的站点列表'],
+        tips_en: ['💡 Screens above platform show next train arrival', '💡 Check station list on platform if unsure'] },
+      { title_zh: '第二步：安全候车', title_en: 'Step 2: Wait Safely', icon: 'fa-shield-alt',
+        detail_zh: '站在黄色安全线内候车，不要越过安全线。列车进站时会有风压，站在安全线外非常危险。可以先让下车的乘客通过，再有序上车。',
+        detail_en: 'Stand behind the yellow safety line. Trains create wind pressure when arriving. Let exiting passengers pass first, then board.',
+        tips_zh: ['💡 高峰时段注意人流拥挤，保护好随身物品', '💡 站台与列车间有间隙，注意脚下安全'],
+        tips_en: ['💡 Watch belongings during peak hours', '💡 Mind the gap between platform and train'] },
+      { title_zh: '第三步：上车与乘车', title_en: 'Step 3: Board and Ride', icon: 'fa-subway',
+        detail_zh: '车门打开后，先下后上，有序进入车厢。进入车厢后尽量往里走，不要堵在门口。车厢内有扶手和拉环，请站稳扶好。注意听车内广播，关注到站信息。',
+        detail_en: 'When doors open, let passengers exit first, then board. Move inside, hold handrails, and listen for station announcements.',
+        tips_zh: ['💡 车门即将关闭时有提示音，此时不要强行上车', '💡 老弱病残孕专座在车厢两端，请主动让座'],
+        tips_en: ['💡 Don\'t force entry when doors are closing', '💡 Priority seats are at car ends; please offer them'] }
+    ]
+  },
+  transfer: {
+    icon: 'fa-exchange-alt', color: '#8B5CF6',
+    title_zh: '换乘详细教学', title_en: 'Transfer Tutorial',
+    intro_zh: '当您的行程需要换乘其他线路时，需要在换乘站下车，通过换乘通道到达另一条线路的站台。',
+    intro_en: 'When transferring to another line, exit the train at the transfer station and follow the transfer corridor.',
+    steps: [
+      { title_zh: '第一步：识别换乘站', title_en: 'Step 1: Identify Transfer Station', icon: 'fa-info-circle',
+        detail_zh: '在乘车前规划路线时，注意查看是否有换乘站。换乘站在站内指示牌上会特别标注"换乘"标识。成都地铁部分换乘站为同台换乘（如天府站），下车后走到对面站台即可。',
+        detail_en: 'Check your route for transfer stations. Transfer stations have special "Transfer" signs. Some offer same-platform transfers.',
+        tips_zh: ['💡 同台换乘最快，无需上下楼梯', '💡 非同台换乘需要跟随"换乘"指示牌步行'],
+        tips_en: ['💡 Same-platform transfer is fastest', '💡 Follow "Transfer" signs for cross-platform transfers'] },
+      { title_zh: '第二步：跟随换乘指示', title_en: 'Step 2: Follow Transfer Signs', icon: 'fa-directions',
+        detail_zh: '下车后，跟随站内"换乘"指示牌行走。指示牌通常为蓝底白字，标注目标线路名称和方向。换乘通道内有自动步道的站点可以利用步道加快速度。',
+        detail_en: 'Follow the blue "Transfer" signs after exiting. Some corridors have moving walkways.',
+        tips_zh: ['💡 换乘通道较长时注意不要走错方向', '💡 部分换乘站有多个出口，注意看线路标识'],
+        tips_en: ['💡 Don\'t go the wrong way in long corridors', '💡 Check line signs at multiple transfer exits'] },
+      { title_zh: '第三步：到达新站台', title_en: 'Step 3: Reach New Platform', icon: 'fa-flag-checkered',
+        detail_zh: '跟随指示到达新线路的站台后，确认方向正确（看站台上的站点列表和方向标识），然后在安全线内候车。注意：换乘不需要重新刷卡/购票，费用已在进站时计算。',
+        detail_en: 'After reaching the new platform, verify direction and wait. No need to tap again; fare was calculated at entry.',
+        tips_zh: ['💡 换乘不额外收费', '💡 换乘后注意列车方向，不要坐反了'],
+        tips_en: ['💡 Transfers are free', '💡 Double-check train direction after transferring'] }
+    ]
+  },
+  exitGate: {
+    icon: 'fa-sign-out-alt', color: '#EF4444',
+    title_zh: '出站详细教学', title_en: 'Exit Gate Tutorial',
+    intro_zh: '到达目的地站后，需要通过出站闸机离开车站。',
+    intro_en: 'After arriving at your destination, pass through the exit gate to leave the station.',
+    steps: [
+      { title_zh: '第一步：跟随出站指示', title_en: 'Step 1: Follow Exit Signs', icon: 'fa-sign',
+        detail_zh: '下车后，跟随站内"出站"指示牌前往站厅层。如果需要从特定出口出站（如A口、B口），提前查看出口信息。站内指示牌会标注每个出口通往的街道或地标。',
+        detail_en: 'Follow "Exit" signs to the concourse. Check exit labels (A, B, C...) for your destination.',
+        tips_zh: ['💡 用手机地图查看最近出口', '💡 大型站点出口较多，提前确认'],
+        tips_en: ['💡 Use maps app to find nearest exit', '💡 Large stations have many exits; confirm beforehand'] },
+      { title_zh: '第二步：刷卡/扫码出站', title_en: 'Step 2: Tap Card or Scan QR to Exit', icon: 'fa-door-open',
+        detail_zh: '将天府通卡贴近出站闸机感应区，或打开App乘车码扫码。闸机感应成功后会显示本次乘车费用和卡内余额。使用单程票的乘客需要将蓝色票卡投入闸机投币口。',
+        detail_en: 'Tap your card or scan QR at the exit gate. Single-trip token users must insert the token into the slot.',
+        tips_zh: ['💡 单程票必须投入闸机回收，不能带走', '💡 如果闸机不响应，不要强行通过，找工作人员'],
+        tips_en: ['💡 Single-trip tokens must be inserted (not kept)', '💡 If gate doesn\'t respond, ask staff'] },
+      { title_zh: '第三步：选择出口离开', title_en: 'Step 3: Choose Exit and Leave', icon: 'fa-map-signs',
+        detail_zh: '通过闸机后，根据指示牌选择正确的出口。大型换乘站可能有A、B、C、D等多个出口，每个出口通往不同方向。出口处通常有周边地图和公交接驳信息。',
+        detail_en: 'After passing the gate, follow signs to your exit. Large stations have multiple exits leading to different areas.',
+        tips_zh: ['💡 出站后如果需要换乘公交，查看出口处的公交信息', '💡 出站后单程票已失效，不能再次使用'],
+        tips_en: ['💡 Check bus connections at the exit', '💡 Single-trip tokens are invalid after exit'] }
+    ]
+  }
+};
+
+function startTutorialDetail(taskId) {
+  const data = TUTORIAL_DETAIL_DATA[taskId];
+  if (!data) return;
+  const isEn = currentLang === 'en';
+  document.getElementById('tut-detail-title').textContent = isEn ? data.title_en : data.title_zh;
+  const overview = document.getElementById('tut-detail-overview');
+  overview.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div style="width:48px;height:48px;border-radius:14px;background:${data.color}20;display:flex;align-items:center;justify-content:center;border:1px solid ${data.color}40">
+        <i class="fas ${data.icon}" style="color:${data.color};font-size:20px"></i>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#fff">${isEn ? data.title_en : data.title_zh}</div>
+        <div style="font-size:11px;color:#64748B">${data.steps.length} ${isEn ? 'steps' : '个步骤'}</div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:#94A3B8;line-height:1.6">${isEn ? data.intro_en : data.intro_zh}</p>
+  `;
+  const stepsEl = document.getElementById('tut-detail-steps');
+  stepsEl.innerHTML = data.steps.map((step, i) => {
+    const tips = isEn ? step.tips_en : step.tips_zh;
+    return `
+      <div class="glass-card" style="overflow:hidden">
+        <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:28px;height:28px;border-radius:8px;background:${data.color}20;display:flex;align-items:center;justify-content:center">
+              <span style="color:${data.color};font-size:12px;font-weight:800">${i+1}</span>
+            </div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700;color:#fff">${isEn ? step.title_en : step.title_zh}</div>
+            </div>
+            <i class="fas ${step.icon}" style="color:${data.color};font-size:16px"></i>
+          </div>
+        </div>
+        <div style="padding:14px 16px">
+          <p style="font-size:13px;color:#CBD5E1;line-height:1.7">${isEn ? step.detail_en : step.detail_zh}</p>
+          ${tips.length ? `
+          <div style="margin-top:12px;padding:10px 12px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.12);border-radius:10px">
+            ${tips.map(tip => `<p style="font-size:12px;color:#F59E0B;line-height:1.6;margin-bottom:4px">${tip}</p>`).join('')}
+          </div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('tut-back-btn').textContent = isEn ? 'Back' : '返回教学';
+  document.getElementById('tut-start-ar').textContent = isEn ? 'Start AR Nav' : '开始AR导航';
+  navigateTo('page-tutorial-detail');
+}
 function searchStation() { 
   const val=document.getElementById('station-search')?.value.toLowerCase(); 
   const lineSelect = document.getElementById('station-line-select');
@@ -1113,6 +1495,64 @@ function updateAllTexts() {
   document.getElementById('qr-timer').innerHTML = isEn ? `Valid: <span id="qr-countdown">120</span>s` : `有效期：<span id="qr-countdown">120</span>s`;
   document.getElementById('qr-refresh-btn').innerText = isEn ? 'Refresh' : '刷新二维码';
   document.getElementById('daily-xp-label').innerText = isEn ? 'Today XP' : '今日经验';
+  // 乘车教学
+  document.getElementById('tutorial-title').innerText = isEn ? 'Ride Tutorial' : '乘车教学';
+  document.getElementById('tutorial-desc').innerText = isEn ? 'Learn the complete process of taking the metro. Click "Tutorial" for detailed guide or "Start Nav" for AR camera.' : '学习地铁乘车全流程，点击"开始教学"查看详细指南，或点击"开始导航"体验AR相机。';
+  // 详细教学
+  const tutDetailTitle = document.getElementById('tut-detail-title');
+  if (tutDetailTitle) tutDetailTitle.innerText = isEn ? 'Tutorial Detail' : '详细教学';
+  const tutBackBtn = document.getElementById('tut-back-btn');
+  if (tutBackBtn) tutBackBtn.innerText = isEn ? 'Back' : '返回教学';
+  const tutStartAR = document.getElementById('tut-start-ar');
+  if (tutStartAR) tutStartAR.innerText = isEn ? 'Start AR Nav' : '开始AR导航';
+  // AR导航
+  document.getElementById('ar-title').innerText = isEn ? 'AR Navigation' : 'AR导航';
+  document.getElementById('ar-line-label').innerText = isEn ? 'Select Line' : '选择线路';
+  document.getElementById('ar-switch-mode').innerText = isEn ? 'Switch Mode' : '切换模式';
+  document.getElementById('ar-use-nav').innerText = isEn ? 'Use AR Navigation' : '使用AR导航';
+  document.getElementById('ar-steps-title').innerText = isEn ? 'Navigation Steps' : '导航步骤';
+  // AR相机页面
+  document.getElementById('camera-title').innerText = isEn ? 'AR Navigation' : 'AR导航';
+  document.getElementById('camera-placeholder-text').innerText = isEn ? 'Tap to start AR navigation' : '点击下方按钮开启AR导航';
+  document.getElementById('ar-prev-btn').innerText = isEn ? 'Prev' : '上一步';
+  document.getElementById('ar-confirm-btn').innerText = isEn ? 'Confirm' : '确认完成';
+  document.getElementById('ar-next-btn').innerText = isEn ? 'Next' : '下一步';
+  const toggleText = document.getElementById('ar-toggle-text');
+  if (toggleText) toggleText.textContent = arOverlayVisible ? (isEn ? 'Hide AR' : '隐藏AR') : (isEn ? 'Show AR' : '显示AR');
+  document.getElementById('ar-start-cam').innerText = isEn ? 'Camera' : '开启摄像头';
+  document.getElementById('ar-stop-cam').innerText = isEn ? 'Stop' : '关闭摄像头';
+  document.getElementById('ar-take-photo').innerText = isEn ? 'Photo' : '拍照';
+  document.getElementById('photo-gallery-title').innerText = isEn ? 'Photo Gallery' : '已拍摄照片';
+  // 无障碍设置
+  document.getElementById('access-title').innerText = isEn ? 'Accessibility' : '无障碍设置';
+  document.getElementById('visual-aid').innerText = isEn ? 'Visual Assistance' : '视觉辅助';
+  document.getElementById('large-font-label').innerText = isEn ? 'Large Font Mode' : '大字体模式';
+  document.getElementById('large-font-desc').innerText = isEn ? 'Enlarge UI text & icons (1.25x)' : '放大界面文字与图标 (1.25倍)';
+  document.getElementById('audio-aid').innerText = isEn ? 'Hearing Assistance' : '听觉辅助';
+  document.getElementById('vibration-label').innerText = isEn ? 'Vibration Feedback' : '振动反馈';
+  document.getElementById('vibration-desc').innerText = isEn ? 'Vibrate on important notifications' : '重要通知时振动';
+  document.getElementById('language-label').innerText = isEn ? 'Language' : '语言 / Language';
+  document.getElementById('language-select-label').innerText = isEn ? 'Switch Language' : '切换语言';
+  document.getElementById('language-desc').innerText = isEn ? 'Select interface language' : '选择界面语言';
+  document.getElementById('book-service').innerText = isEn ? 'Book Accessibility Service' : '预约无障碍服务';
+  // 出行记录
+  document.getElementById('history-title').innerText = isEn ? 'Trip History' : '出行记录';
+  document.getElementById('total-trips-label').innerText = isEn ? 'Total Trips' : '总出行次数';
+  document.getElementById('total-carbon-label').innerText = isEn ? 'Total CO₂ Saved' : '累计减碳';
+  document.getElementById('total-distance-label').innerText = isEn ? 'Total Distance' : '总里程';
+  // 站点信息
+  document.getElementById('station-title').innerText = isEn ? 'Station Info' : '站点信息';
+  document.getElementById('station-line-label').innerText = isEn ? 'Select Line' : '选择线路';
+  // 消息通知
+  document.getElementById('notif-title').innerText = isEn ? 'Notifications' : '消息通知';
+  // 我的成就
+  document.getElementById('achievements-title').innerText = isEn ? 'My Achievements' : '我的成就';
+  // 底部导航
+  document.getElementById('nav-home').innerText = isEn ? 'Home' : '首页';
+  document.getElementById('nav-route').innerText = isEn ? 'Route' : '路线';
+  document.getElementById('nav-ar').innerText = isEn ? 'AR' : 'AR';
+  document.getElementById('nav-game').innerText = isEn ? 'Tasks' : '任务';
+  document.getElementById('nav-profile').innerText = isEn ? 'Profile' : '我的';
   updateStreakUI();
 }
 
@@ -1265,14 +1705,15 @@ function shareTripAction() {
 function getAchievementProgress(ach) {
   if (!currentUserData) return 0;
   let current = 0, target = 1;
-  if (ach.id === 1) { current = currentUserData.trips; target = 1; }
-  else if (ach.id === 2) { current = currentUserData.trips; target = 10; }
-  else if (ach.id === 3) { current = currentUserData.trips; target = 100; }
-  else if (ach.id === 4) { current = currentUserData.carbon; target = 10; }
-  else if (ach.id === 5) { current = currentUserData.carbon; target = 50; }
-  else if (ach.id === 6) { current = currentUserData.points; target = 1000; }
-  else if (ach.id === 7) { current = currentUserData.points; target = 5000; }
-  else if (ach.id === 8) { current = 0; target = 5; } // AR usage - would need backend tracking
+  if (ach.id === 'beginner') { current = currentUserData.trips; target = 1; }
+  else if (ach.id === 'explorer') { current = currentUserData.trips; target = 10; }
+  else if (ach.id === 'metro_master') { current = currentUserData.trips; target = 100; }
+  else if (ach.id === 'eco_warrior') { current = currentUserData.carbon; target = 10; }
+  else if (ach.id === 'eco_hero') { current = currentUserData.carbon; target = 50; }
+  else if (ach.id === 'points_rich') { current = currentUserData.points; target = 1000; }
+  else if (ach.id === 'points_tycoon') { current = currentUserData.points; target = 5000; }
+  else if (ach.id === 'ar_pioneer') { current = (currentUserData.arUsageCount || 0); target = 5; }
+  else if (ach.id === 'task_master') { return currentUserData.allTasksCompleted ? 100 : 0; }
   return Math.min(100, Math.round((current / target) * 100));
 }
 function checkAndShowAchievements() {
