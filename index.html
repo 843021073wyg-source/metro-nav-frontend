@@ -693,54 +693,78 @@ async function handleLogin() {
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value.trim();
   if (!username || !password) { showToast('请填写用户名/手机号和密码'); return; }
-  const res = await fetch(`${API_BASE}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password })
-  });
-  if (res.ok) {
-    const data = await res.json();
-    apiToken = data.token;
-    localStorage.setItem('apiToken', apiToken);
-    currentUserId = data.user.id;
-    await fetchUserProfile();
-    await fetchDailyMissions();
-    loadStreakData();
-    updateStreakUI();
-    generateQRCode();
-    navigateTo('page-home');
-    refreshAllUI();
-    showToast(currentLang === 'zh' ? '登录成功' : 'Login successful');
-  } else {
-    const err = await res.json();
-    showToast(err.error || (currentLang === 'zh' ? '登录失败' : 'Login failed'));
+  const btn = document.querySelector('#page-login button[onclick="handleLogin()"]');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>登录中...'; }
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      apiToken = data.token;
+      localStorage.setItem('apiToken', apiToken);
+      currentUserId = data.user.id;
+      await fetchUserProfile();
+      await fetchDailyMissions();
+      loadStreakData();
+      updateStreakUI();
+      generateQRCode();
+      navigateTo('page-home');
+      refreshAllUI();
+      showToast(currentLang === 'zh' ? '登录成功' : 'Login successful');
+    } else {
+      const err = await res.json();
+      showToast(err.error || (currentLang === 'zh' ? '登录失败' : 'Login failed'));
+    }
+  } catch (e) {
+    showToast(currentLang === 'zh' ? '网络连接超时，请稍后重试' : 'Network timeout, please try again');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '登录'; }
   }
 }
 async function handleRegister() {
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value.trim();
   if (!username || !password) { showToast('请填写用户名和密码'); return; }
-  const res = await fetch(`${API_BASE}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password })
-  });
-  if (res.ok) {
-    const data = await res.json();
-    apiToken = data.token;
-    localStorage.setItem('apiToken', apiToken);
-    currentUserId = data.user.id;
-    await fetchUserProfile();
-    await fetchDailyMissions();
-    loadStreakData();
-    updateStreakUI();
-    generateQRCode();
-    navigateTo('page-home');
-    refreshAllUI();
-    showToast(`${currentLang === 'zh' ? '注册成功，欢迎' : 'Welcome'} ${username}`);
-  } else {
-    const err = await res.json();
-    showToast(err.error || (currentLang === 'zh' ? '注册失败' : 'Registration failed'));
+  const btn = document.querySelector('#page-login button[onclick="handleRegister()"]');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>注册中...'; }
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      apiToken = data.token;
+      localStorage.setItem('apiToken', apiToken);
+      currentUserId = data.user.id;
+      await fetchUserProfile();
+      await fetchDailyMissions();
+      loadStreakData();
+      updateStreakUI();
+      generateQRCode();
+      navigateTo('page-home');
+      refreshAllUI();
+      showToast(`${currentLang === 'zh' ? '注册成功，欢迎' : 'Welcome'} ${username}`);
+    } else {
+      const err = await res.json();
+      showToast(err.error || (currentLang === 'zh' ? '注册失败' : 'Registration failed'));
+    }
+  } catch (e) {
+    showToast(currentLang === 'zh' ? '网络连接超时，请稍后重试' : 'Network timeout, please try again');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '注册新账号'; }
   }
 }
 function socialLogin(platform) {
@@ -1857,8 +1881,12 @@ function initAll() {
   const savedToken = localStorage.getItem('apiToken');
   if (savedToken) {
     apiToken = savedToken;
-    fetch(`${API_BASE}/user/profile`, { headers: { 'Authorization': `Bearer ${apiToken}` } })
+    showToast(currentLang === 'zh' ? '正在自动登录...' : 'Auto login...');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    fetch(`${API_BASE}/user/profile`, { headers: { 'Authorization': `Bearer ${apiToken}` }, signal: controller.signal })
       .then(res => {
+        clearTimeout(timeoutId);
         if (res.ok) {
           fetchUserProfile().then(() => fetchDailyMissions()).then(() => {
             loadStreakData();
@@ -1867,8 +1895,17 @@ function initAll() {
             navigateTo('page-home');
           });
         } else {
+          localStorage.removeItem('apiToken');
+          apiToken = null;
           navigateTo('page-login');
         }
+      })
+      .catch(() => {
+        clearTimeout(timeoutId);
+        localStorage.removeItem('apiToken');
+        apiToken = null;
+        navigateTo('page-login');
+        showToast(currentLang === 'zh' ? '自动登录失败，请手动登录' : 'Auto login failed, please login manually');
       });
   } else {
     navigateTo('page-login');
