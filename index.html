@@ -709,7 +709,7 @@ async function handleLogin() {
       const data = await res.json();
       apiToken = data.token;
       localStorage.setItem('apiToken', apiToken);
-      currentUserId = data.user.id;
+      currentUserId = String(data.user.id);
       await fetchUserProfile();
       await fetchDailyMissions();
       loadStreakData();
@@ -723,6 +723,7 @@ async function handleLogin() {
       showToast(err.error || (currentLang === 'zh' ? '登录失败' : 'Login failed'));
     }
   } catch (e) {
+    console.error('Login error:', e);
     showToast(currentLang === 'zh' ? '网络连接超时，请稍后重试' : 'Network timeout, please try again');
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = '登录'; }
@@ -748,7 +749,7 @@ async function handleRegister() {
       const data = await res.json();
       apiToken = data.token;
       localStorage.setItem('apiToken', apiToken);
-      currentUserId = data.user.id;
+      currentUserId = String(data.user.id);
       await fetchUserProfile();
       await fetchDailyMissions();
       loadStreakData();
@@ -762,6 +763,7 @@ async function handleRegister() {
       showToast(err.error || (currentLang === 'zh' ? '注册失败' : 'Registration failed'));
     }
   } catch (e) {
+    console.error('Register error:', e);
     showToast(currentLang === 'zh' ? '网络连接超时，请稍后重试' : 'Network timeout, please try again');
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = '注册新账号'; }
