@@ -1547,6 +1547,67 @@ function updateAllTexts() {
   document.getElementById('notif-title').innerText = isEn ? 'Notifications' : '消息通知';
   // 我的成就
   document.getElementById('achievements-title').innerText = isEn ? 'My Achievements' : '我的成就';
+  // 个人中心
+  document.getElementById('profile-title').innerText = isEn ? 'Profile' : '个人中心';
+  document.getElementById('stat-trips-label').innerText = isEn ? 'Trips' : '出行';
+  document.getElementById('stat-points-label').innerText = isEn ? 'Points' : '积分';
+  document.getElementById('stat-friends-label').innerText = isEn ? 'Friends' : '好友';
+  document.getElementById('stat-badges-label').innerText = isEn ? 'Badges' : '徽章';
+  document.getElementById('my-achievements-title').innerText = isEn ? 'My Achievements' : '我的成就';
+  document.getElementById('view-all-achievements').innerText = isEn ? 'View All' : '查看全部';
+  document.getElementById('menu-history').innerText = isEn ? 'Trip History' : '出行记录';
+  document.getElementById('menu-game').innerText = isEn ? 'Game Tasks' : '游戏任务';
+  document.getElementById('menu-mall').innerText = isEn ? 'Points Mall' : '积分商城';
+  document.getElementById('menu-level').innerText = isEn ? 'Level' : '等级';
+  document.getElementById('menu-accessibility').innerText = isEn ? 'Accessibility' : '无障碍设置';
+  document.getElementById('logout-btn').innerText = isEn ? 'Logout' : '退出登录';
+  // 等级页面
+  document.getElementById('level-title').innerText = isEn ? 'My Level' : '我的等级';
+  document.getElementById('current-level-label').innerText = isEn ? 'Current Level' : '当前等级';
+  document.getElementById('next-level-hint').innerText = isEn ? 'Reach next level with enough points' : '积分达到下一级可升级';
+  // 路线规划页面
+  document.getElementById('route-page-title').innerText = isEn ? 'Route Planning' : '路线规划';
+  document.getElementById('select-line-label').innerText = isEn ? 'Select Line' : '选择线路';
+  document.getElementById('search-route-btn').innerText = isEn ? 'Search Route' : '搜索路线';
+  // 详细路线页面
+  document.getElementById('route-detail-title').innerText = isEn ? 'Route Details' : '详细路线';
+  document.getElementById('confirm-route-btn').innerText = isEn ? 'Confirm Route' : '确定路线';
+  document.getElementById('online-ticket-btn').innerText = isEn ? 'Buy Ticket' : '网上购票';
+  // 购票页面
+  document.getElementById('ticket-title').innerText = isEn ? 'Purchase Ticket' : '网上购票';
+  // 游戏任务页面
+  document.getElementById('game-title').innerText = isEn ? 'Game Tasks' : '游戏任务';
+  document.getElementById('total-points-label').innerText = isEn ? 'Total Points' : '总积分';
+  document.getElementById('daily-game-title').innerHTML = isEn ? 'Daily Tasks <span class="text-white" id="task-progress">0/6</span>' : '每日任务 <span class="text-white" id="task-progress">0/6</span>';
+  document.getElementById('incomplete-achievements-title').innerText = isEn ? 'Incomplete Achievements' : '未完成成就';
+  // 积分商城
+  document.getElementById('mall-title').innerText = isEn ? 'Points Mall' : '积分商城';
+  document.getElementById('points-available').innerText = isEn ? 'Available Points' : '可用积分';
+  document.getElementById('points-detail-btn').innerText = isEn ? 'Details' : '积分明细';
+  document.getElementById('item1-name').innerText = isEn ? '¥2 off (min ¥5)' : '满5减2优惠券';
+  document.getElementById('item1-desc').innerText = isEn ? 'Valid for Chengdu Metro' : '限成都地铁使用';
+  document.getElementById('item1-price').innerHTML = isEn ? '100 pts' : '100积分';
+  document.getElementById('item2-name').innerText = isEn ? '¥5 off (min ¥10)' : '满10减5优惠券';
+  document.getElementById('item2-desc').innerText = isEn ? 'Valid for Chengdu Metro' : '限成都地铁使用';
+  document.getElementById('item2-price').innerHTML = isEn ? '300 pts' : '300积分';
+  document.getElementById('item3-name').innerText = isEn ? '¥7 off (min ¥12)' : '满12减7优惠券';
+  document.getElementById('item3-desc').innerText = isEn ? 'Valid for Chengdu Metro' : '限成都地铁使用';
+  document.getElementById('item3-price').innerHTML = isEn ? '500 pts' : '500积分';
+  document.getElementById('exchange-btn1').innerText = document.getElementById('exchange-btn2').innerText = document.getElementById('exchange-btn3').innerText = isEn ? 'Redeem' : '兑换';
+  // 积分明细页面
+  document.getElementById('points-detail-title').innerText = isEn ? 'Points Details' : '积分明细';
+  document.getElementById('current-points-label').innerText = isEn ? 'Current Total Points' : '当前总积分';
+  document.getElementById('earn-title').innerHTML = isEn ? '📌 Ways to Earn Points' : '📌 积分获取途径';
+  document.getElementById('use-title').innerHTML = isEn ? '🎁 Uses of Points' : '🎁 积分用途';
+  // 等级名称刷新
+  if (currentUserData) {
+    const level = currentUserData.level;
+    const title = getTitleByLevel(level);
+    if (document.getElementById('level-name')) document.getElementById('level-name').innerText = title;
+    document.getElementById('user-level').innerHTML = `Lv.${level} ${title}`;
+  }
+  // 积分明细动态内容
+  updatePointsDetailPage();
   // 底部导航
   document.getElementById('nav-home').innerText = isEn ? 'Home' : '首页';
   document.getElementById('nav-route').innerText = isEn ? 'Route' : '路线';
