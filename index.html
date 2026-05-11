@@ -1214,7 +1214,7 @@ function navigateBack() { if(state.pageHistory.length>1){ state.pageHistory.pop(
 function showToast(msg) { const toast=document.getElementById('toast'); document.getElementById('toast-message').innerText=msg; toast.style.opacity='1'; setTimeout(()=>toast.style.opacity='0',2000); }
 function updateDateTime() { const now=new Date(); document.getElementById('home-date').textContent=now.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}); document.getElementById('home-time').textContent=now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}); }
 setInterval(updateDateTime,1000); updateDateTime();
-function toggleAccessibility(s) { showToast(`${s} ${currentLang === 'zh' ? '已更新' : 'updated'}`); }
+function toggleAccessibility_stub(s) { showToast(`${s} ${currentLang === 'zh' ? '已更新' : 'updated'}`); }
 function bookAssistance() { showToast(currentLang === 'zh' ? '预约成功' : 'Booking successful'); }
 function toggleARMode() { showToast(currentLang === 'zh' ? '模式切换' : 'Mode toggled'); }
 
@@ -1648,7 +1648,17 @@ function updateAllTexts() {
 // 振动控制
 function vibrateDevice(pattern) {
   if (!vibrationEnabled) return;
-  if ('vibrate' in navigator) navigator.vibrate(pattern || 30);
+  if ('vibrate' in navigator) {
+    try { navigator.vibrate(pattern || 30); } catch(e) {}
+  } else {
+    // 浏览器不支持振动API时，提供视觉反馈
+    const el = document.getElementById('vibration-toggle');
+    if (el && el.parentElement) {
+      el.parentElement.style.transition = 'transform 0.15s';
+      el.parentElement.style.transform = 'scale(1.15)';
+      setTimeout(() => { el.parentElement.style.transform = 'scale(1)'; }, 200);
+    }
+  }
 }
 document.addEventListener('click', function(e) {
   const el = e.target.closest('button, .glass-btn, .nav-item, .cursor-pointer, [onclick]');
